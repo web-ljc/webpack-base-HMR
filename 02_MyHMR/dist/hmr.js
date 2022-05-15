@@ -16,11 +16,13 @@ let hotEmitter = new EventEmitter()
 ;(function(modules) {
   // 存放缓存的模块
   var installedModules = {}
+  // 6moudule.hot.check方法
   function hotCheck() {
     // {"h": "", "c":{"main": true}}
     hotDownloadManifest().then(update => {
       let chunkIds = Object.keys(update.c) // ["main"]
       chunkIds.forEach(chunkId => {
+        // 8调用hotDownloadUpdateChunk
         hotDownloadUpdateChunk(chunkId)
       })
       lastHash = currentHash
@@ -28,34 +30,40 @@ let hotEmitter = new EventEmitter()
       window.location.reload()
     })
   }
+  // 8调用hotDownloadUpdateChunk
   // 添加script
   function hotDownloadUpdateChunk(chunkId) {
     let script = document.createElement('script')
     script.src = `${chunkId}.${lastHash}.hot-update.js`
     document.head.appendChild(script)
   }
+  // 9webpackHotUpdate
   window.webpackHotUpdate = function(chunkId, moreModules) {
     hotAddUpdateChunk(chunkId, moreModules)
   }
   let hotUpdate = {}
+  // 10hotAddUpdateChunk
   function hotAddUpdateChunk(chunkId, moreModules) {
     for(let moduleId in moreModules) {
       modules[moduleId] = hotUpdate[moduleId] = moreModules[moduleId]
     }
     hotApply()
   }
+  // 11hotApply
   function hotApply() {
     for(let moduleId in hotUpdate) { // ./src/title.js
       let oldModule = installedModules[moduleId] // 老title.js模块
-      delete installedModules[moduleId] // 删除
+      delete installedModules[moduleId] // 12从缓存中删除旧模块
       // 循环它所依赖的父模块
       oldModule.parents.forEach(parentModule => {
         // 取出父模块上的回调，如果有就执行
         let cb = parentModule.hot._acceptedDependencies[moduleId]
+        // 13执行回调
         cb && cb()
       })
     }
   }
+  // 7调用hotDownloadManifest
   // 请求json文件
   function hotDownloadManifest() {
     return new Promise(function(resolve, reject) {
@@ -69,6 +77,7 @@ let hotEmitter = new EventEmitter()
       xhr.send()
     })
   }
+  // 6moudule.hot.check方法
   function hotCreateModule() {
     let hot = {
       _acceptedDependencies: {},
@@ -104,7 +113,7 @@ let hotEmitter = new EventEmitter()
       i: moduleId, // 模块ID，标识符
       l: false, // loaded是否已经加载
       exports: {}, // 导出对象
-      hot: hotCreateModule(),
+      hot: hotCreateModule(), // 6moudule.hot
       parents: [], // 当前模块的父亲们
       children: [] // 当前模块的孩子们
     }
@@ -141,22 +150,24 @@ let hotEmitter = new EventEmitter()
     module.exports = "title"
   },
   "webpack-dev-server/client/index.js": function(module, exports) {
+    // 1连接websocket服务器
     const socket = window.io('/')
-    // 监听hash事件，保存此hash值
+    // 2监听hash事件，保存此hash值
     socket.on('hash', (hash) => {
       currentHash = hash
     })
-    // 监听ok
+    // 3监听ok
     socket.on('ok', () => {
       console.info('ok')
       reloadApp()
     })
-    
+    // 4发射webpackHotUpdate事件
     function reloadApp() {
       hotEmitter.emit('webpackHotUpdate')
     }
   },
   "webpack/hot/dev-server.js": function(module, exports) {
+    // 5监听webpackHotUpdate事件
     hotEmitter.on('webpackHotUpdate', () => {
       console.info('hotCheck')
       if(!lastHash) { // 没有lastHash说明没上一次的编译结果，说明就是第一次渲染
@@ -165,6 +176,7 @@ let hotEmitter = new EventEmitter()
         return
       }
       console.log('lashHash',lastHash, 'currentHash', currentHash)
+      // 6hotCheck
       module.hot.check()
     })
   },
