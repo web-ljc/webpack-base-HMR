@@ -12,8 +12,8 @@ function updateCompiler(compiler) {
   const config = compiler.options;
   config.entry = {
     main: [
-      path.resolve(__dirname, '../client/index.js'),
-      path.resolve(__dirname, '../client/hot/dev-server.js'),
+      path.resolve(__dirname, '../../client/index.js'),
+      path.resolve(__dirname, '../../../webpack/hot/dev-server.js'),
       config.entry 
     ]
   }

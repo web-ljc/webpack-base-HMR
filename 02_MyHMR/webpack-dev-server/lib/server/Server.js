@@ -1,11 +1,13 @@
 
 const express = require('express')
 const http = require('http')
-const MemoryFS = require('memory-fs') // 基于内存
 const path = require('path')
+// const MemoryFS = require('memory-fs') // 基于内存
+const fs = require('fs-extra') // 基于硬盘文件系统
+fs.join = path.join
 const mime = require('mime') // 从文件中拿到类型
-const socketIo = require('socket.io')
-const updateCompiler = require('./updateCompiler')
+const socketIo = require('socket.io') // 创建socket服务
+const updateCompiler = require('../utils/updateCompiler')
 
 class Server {
   constructor(compiler) {
@@ -51,10 +53,10 @@ class Server {
     compiler.watch({}, () => {
       console.info('监听模式启动编译')
     })
-    let fs = new MemoryFS() // 内存文件系统实例
+    // let fs = new MemoryFS() // 内存文件系统实例
     // 打包后文件写入内存文件系统，读的时候也从内存文件系统里读
     this.fs = compiler.outputFileSystem = fs
-    console.info(this.fs, 9)
+    console.info(9)
     // 返回一个中间件，用来响应客户端对于产出文件的请求
     return (staticDir) => { // 静态文件根目录，它其实就是输出目录 dist目录
       return (req, res, next) => {
@@ -65,7 +67,7 @@ class Server {
         url === '/' ? url = '/index.html' : null
         // 得到要访问的静态路径 /index.html /main.js
         let filePath = path.join(staticDir, url)
-        console.info('filePath', filePath)
+        console.info('filePath', filePath) 
         // /Users/ljc/Documents/code/student/webpack-HMR/02_MyHMR/dist/index.html
         try {
           // 返回此路径上的文件的描述对象，如果此文件不存在会抛异常
@@ -83,7 +85,7 @@ class Server {
         }
       }
     }
-  }
+  } 
   setupHooks() {
     let {compiler} = this
     // 监听编译完成事件，当编译完成后会调用此钩子函数
